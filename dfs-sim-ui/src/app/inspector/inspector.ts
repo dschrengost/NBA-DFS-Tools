@@ -1,21 +1,16 @@
 import { Component, signal } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { OptimizerSettingsComponent } from './optimizer-settings.component';
 
 @Component({
   selector: 'app-inspector',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, OptimizerSettingsComponent],
   template: `
     <div class="inspector-wrap">
       @if (activeTool() === 'optimizer') {
-        <section class="section">
-          <h3>Optimizer Settings</h3>
-          <div class="field"><span class="label">Lineup rules</span><span class="value">Placeholder</span></div>
-          <div class="field"><span class="label">Salary min/max</span><span class="value">Placeholder</span></div>
-          <div class="field"><span class="label">Ownership caps</span><span class="value">Placeholder</span></div>
-          <div class="field"><span class="label">Exposures</span><span class="value">Placeholder</span></div>
-        </section>
+        <app-optimizer-settings></app-optimizer-settings>
       } @else if (activeTool() === 'simulations') {
         <section class="section">
           <h3>Simulations Settings</h3>
