@@ -1,0 +1,49 @@
+<form [formGroup]="form" class="settings">
+  <!-- Lineup Rules -->
+  <section>
+    <h3>Lineup rules</h3>
+
+    <label>Min uniques</label>
+    <app-segmented formControlName="minUniques" [options]="[1,2,3]"></app-segmented>
+    <p class="hint">Minimum different players across generated lineups.</p>
+
+    <label>Max per team</label>
+    <input type="number" min="1" max="8" placeholder="Unlimited" formControlName="maxPerTeam" />
+    <p class="hint">Leave blank for no cap.</p>
+
+    <label>Stacking</label>
+    <select formControlName="stackType">
+      <option value="none">None</option>
+      <option value="team">Team</option>
+      <option value="game">Game</option>
+    </select>
+
+    <label>Stack size</label>
+    <input type="number" min="2" max="4" formControlName="stackSize" [disabled]="form.value.stackType==='none'" />
+  </section>
+
+  <!-- Salary -->
+  <section>
+    <h3>Salary min/max</h3>
+    <label>Min salary used</label>
+    <input type="range" min="47000" max="50000" step="100" formControlName="salaryMinUsed" />
+    <div class="row">
+      <input type="number" min="47000" max="50000" step="100" formControlName="salaryMinUsed" />
+      <span class="hint">DK cap: $50,000</span>
+    </div>
+  </section>
+
+  <!-- Ownership -->
+  <section>
+    <h3>Ownership caps</h3>
+    <label>Ownership fade</label>
+    <input type="range" min="0" max="100" formControlName="ownershipFade" />
+  </section>
+
+  <!-- Exposures -->
+  <section>
+    <h3>Exposures</h3>
+    <label>Sim diversity</label>
+    <input type="range" min="0" max="100" formControlName="simDiversity" />
+  </section>
+</form>
