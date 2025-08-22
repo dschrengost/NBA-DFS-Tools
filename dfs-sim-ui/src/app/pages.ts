@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PlayerCsvService } from './core/services/player-csv.service';
+import { ContestCsvService } from './core/services/contest-csv.service';
 
 /* Optimizer */
 @Component({
@@ -31,7 +33,20 @@ import { CommonModule } from '@angular/common';
     .btn:hover { background: var(--panel); }
   `]
 })
-export class OptimizerPage {}
+export class OptimizerPage implements OnInit {
+  private players = inject(PlayerCsvService);
+  private contestsSvc = inject(ContestCsvService);
+
+  async ngOnInit(): Promise<void> {
+    const [players, contests] = await Promise.all([
+      this.players.parse(),
+      this.contestsSvc.load(),
+    ]);
+    console.log('[Task2] players:', players.length);
+    console.table(players.slice(0, 10));
+    console.log('[Task2] contests:', contests.length, contests[0]);
+  }
+}
 
 /* Simulations */
 @Component({
