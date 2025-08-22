@@ -24,7 +24,7 @@ function parsePositions(raw: unknown): PlayerPosition[] {
 export class PlayerCsvService {
   constructor(private csv: CsvService, private ids: PlayerIdsCsvService) {}
 
-  async parse(file: File | string = '/dk_data/projections.csv'): Promise<Player[]> {
+  async parse(file: File | string = '/assets/dk_data/projections.csv'): Promise<Player[]> {
     const [rows, idMap] = await Promise.all([
       this.csv.parse<Record<string, unknown>>(file),
       this.ids.load(),

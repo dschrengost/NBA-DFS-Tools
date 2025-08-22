@@ -12,7 +12,7 @@ function parseNumber(val: unknown): number | null {
 export class ContestCsvService {
   constructor(private csv: CsvService) {}
 
-  async load(file: File | string = '/dk_data/contest_structure.csv'): Promise<ContestStructure[]> {
+  async load(file: File | string = '/assets/dk_data/contest_structure.csv'): Promise<ContestStructure[]> {
     const rows = await this.csv.parse<Record<string, unknown>>(file);
     const grouped: Record<string, { entries: number[]; buckets: PayoutBucket[] }> = {};
 

@@ -1,0 +1,4 @@
+contest_id,entries,place_from,place_to,amount
+mini,1000,1,1,10000
+mini,1000,2,10,100
+mini,1000,11,100,10
