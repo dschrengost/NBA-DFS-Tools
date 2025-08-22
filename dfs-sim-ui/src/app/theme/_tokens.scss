@@ -1,0 +1,15 @@
+:root {
+  --bg: #0E1116;
+  --panel: #12151C;
+  --muted: #1A1E27;
+  --border: #242A36;
+  --text: #E7ECF3;
+  --subtle: #A8B2C3;
+  --accent: #6DA7FF;
+  --accent2: #7CD4B4;
+  --danger: #FF7A7A;
+  --radius: 10px;
+  --gap: 12px;
+}
+body { background: var(--bg); color: var(--text); }
+.ag-theme-quartz { --ag-background-color: var(--panel); --ag-odd-row-background-color: var(--muted); }
