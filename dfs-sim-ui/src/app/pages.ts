@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AssetsListComponent } from './assets/assets-list.component';
 
 /* Optimizer */
 @Component({
@@ -147,3 +148,26 @@ export class ResultsPage {}
   `]
 })
 export class SettingsPage {}
+
+/* Data Assets */
+@Component({
+  selector: 'page-assets',
+  standalone: true,
+  imports: [CommonModule, AssetsListComponent],
+  template: `
+    <div class="page">
+      <header class="page-header">
+        <h2>Data Assets</h2>
+      </header>
+      <section class="page-body">
+        <app-assets-list></app-assets-list>
+      </section>
+    </div>
+  `,
+  styles: [`
+    .page { padding: var(--gap-3); font-family: var(--font-sans); color: var(--text); }
+    .page-header { border-bottom: 1px solid var(--border); padding-bottom: var(--gap-2); margin-bottom: var(--gap-3); }
+    h2 { margin: 0; font-size: var(--fs-16); }
+  `]
+})
+export class AssetsPage {}
