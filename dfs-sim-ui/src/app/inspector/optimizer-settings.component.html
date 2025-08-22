@@ -36,14 +36,21 @@
   <!-- Ownership -->
   <section>
     <h3>Ownership caps</h3>
-    <label>Ownership fade</label>
+    <label class="value-label">
+      <span>Ownership fade</span>
+      <span>{{ form.value.ownershipFade }}%</span>
+    </label>
     <input type="range" min="0" max="100" formControlName="ownershipFade" />
   </section>
 
-  <!-- Exposures -->
+  <!-- Randomness -->
   <section>
-    <h3>Exposures</h3>
-    <label>Sim diversity</label>
+    <h3>Randomness</h3>
+    <label class="value-label">
+      <span>Randomness</span>
+      <span>{{ form.value.simDiversity }}</span>
+    </label>
     <input type="range" min="0" max="100" formControlName="simDiversity" />
+    <p class="hint">Higher values increase lineup diversity.</p>
   </section>
 </form>

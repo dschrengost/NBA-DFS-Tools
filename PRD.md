@@ -70,8 +70,8 @@ Min salary used (range input 47000–50000 + number input linked)
 Section: Ownership caps
 Ownership fade (0–100 range)
 (caps by player later; for now just the global fade slider)
-Section: Exposures
-Sim diversity (0–100 range)
+Section: Randomness
+Randomness (0–100 range)
 (per‑player targets later)
 Behavior
 Each control updates store immediately on change.
@@ -143,10 +143,10 @@ optimizer.page.html (right rail section only)
       <input type="range" min="0" max="100" formControlName="ownershipFade"/>
     </section>
 
-    <!-- Exposures -->
+    <!-- Randomness -->
     <section>
-      <h3>Exposures</h3>
-      <label>Sim diversity</label>
+      <h3>Randomness</h3>
+      <label>Randomness</label>
       <input type="range" min="0" max="100" formControlName="simDiversity"/>
     </section>
 
