@@ -46,6 +46,61 @@
 .nav {
   background: var(--panel);
   border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--gap-2);
+  padding: var(--gap-2) 0;
+}
+
+.nav .spacer {
+  flex: 1 1 auto;
+}
+
+.nav .nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 44px;
+  color: var(--subtle);
+  text-decoration: none;
+  border-radius: 12px;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+
+.nav .nav-item .icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.nav .nav-item.active,
+.nav .nav-item:hover {
+  background: var(--muted);
+  color: var(--text);
+  box-shadow: var(--elev-1);
+}
+
+.nav .nav-item .tooltip {
+  position: absolute;
+  left: 72px;
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.nav .nav-item:hover .tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
 }
 
 /* Main content area (routes render here) */

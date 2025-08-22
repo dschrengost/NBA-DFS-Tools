@@ -1,7 +1,31 @@
 <!-- App shell (SaberSim-style) -->
 <div class="layout">
   <aside class="nav">
-    <!-- TODO: compact icon nav -->
+    <!-- Top tools -->
+    <a class="nav-item" routerLink="/optimizer" routerLinkActive="active" aria-label="Optimizer">
+      <span class="icon">🧮</span>
+      <span class="tooltip">Optimizer</span>
+    </a>
+    <a class="nav-item" routerLink="/simulations" routerLinkActive="active" aria-label="Simulations">
+      <span class="icon">🎲</span>
+      <span class="tooltip">Simulations</span>
+    </a>
+    <a class="nav-item" routerLink="/variants" routerLinkActive="active" aria-label="Variants">
+      <span class="icon">🧬</span>
+      <span class="tooltip">Variants</span>
+    </a>
+    <a class="nav-item" routerLink="/results" routerLinkActive="active" aria-label="Results">
+      <span class="icon">📊</span>
+      <span class="tooltip">Results</span>
+    </a>
+
+    <div class="spacer"></div>
+
+    <!-- Bottom (global) -->
+    <a class="nav-item" routerLink="/settings" routerLinkActive="active" aria-label="Settings">
+      <span class="icon">⚙️</span>
+      <span class="tooltip">Settings</span>
+    </a>
   </aside>
 
   <main class="content">
@@ -9,6 +33,6 @@
   </main>
 
   <aside class="inspector">
-    <!-- TODO: right-rail inspector (player/exposure detail) -->
+    <app-inspector></app-inspector>
   </aside>
 </div>
