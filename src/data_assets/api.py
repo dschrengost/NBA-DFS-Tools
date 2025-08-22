@@ -153,7 +153,7 @@ def upsert_mapping(profile: MappingProfile, root: str = "dk_data") -> Dict[str, 
     mapping_dir.mkdir(parents=True, exist_ok=True)
     path = mapping_dir / f"{profile.source}.mapping.json"
     with path.open("w", encoding="utf-8") as f:
-        json.dump(profile.dict(), f, indent=2)
+        json.dump(profile.model_dump(), f, indent=2)
     return {"status": "ok"}
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Any
 import csv
@@ -79,7 +79,8 @@ def _normalize_own(val: Any) -> float | None:
         return None
     if num > 1:
         num /= 100.0
-    return num
+    # ensure stable CSV printing (avoid long float reprs)
+    return round(num, 6)
 
 
 def _normalize_positions(val: Any) -> str:
@@ -104,7 +105,7 @@ def _normalize_team(val: Any) -> str:
 def normalize_rows(rows: List[Dict[str, str]], mapping: Dict[str, str], source_name: str | None = None) -> List[Dict[str, Any]]:
     """Apply mapping and normalizers to rows."""
     normalized: List[Dict[str, Any]] = []
-    snapshot_ts = datetime.utcnow().isoformat()
+    snapshot_ts = datetime.now(timezone.utc).isoformat()
     for row in rows:
         out: Dict[str, Any] = {}
         for src_col, canon in mapping.items():
@@ -131,7 +132,7 @@ def normalize_rows(rows: List[Dict[str, str]], mapping: Dict[str, str], source_n
 def commit_snapshot(rows: List[Dict[str, Any]], root: Path | str = Path("dk_data")) -> tuple[Path, Path]:
     """Write rows to a timestamped snapshot and return paths."""
     root_path = Path(root)
-    ts = datetime.utcnow().strftime("%Y%m%d_%H%M")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M")
     snapshot_dir = root_path / "snapshots" / ts
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     final_path = snapshot_dir / "projections.csv"

@@ -2,11 +2,50 @@ from __future__ import annotations
 
 import csv
 import hashlib
-import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Dict, Any
+from fastapi import HTTPException
 
+ALLOWED_BASE = Path("dk_data").resolve()
+
+def _safe_root(subpath: Path | str | None) -> Path:
+    """
+    Resolve a safe root for asset listing.
+
+    - If a **Path object** is provided and it's absolute (used by tests), allow it as-is
+      (still must exist and be a directory).
+    - If a **string** (from API query) or a relative Path is provided, treat it as
+      a subpath beneath ALLOWED_BASE and reject traversal outside dk_data/.
+    """
+    # Case 1: absolute Path (e.g., pytest tmp_path)
+    if isinstance(subpath, Path) and subpath.is_absolute():
+        target = subpath.resolve()
+        if not target.exists() or not target.is_dir():
+            raise HTTPException(status_code=400, detail="file not found")
+        return target
+
+    # Case 2: no subpath provided -> base
+    if not subpath:
+        target = ALLOWED_BASE
+    else:
+        # Treat strings and relative Paths as subpaths under dk_data/
+        # Normalize to string and strip leading slash to avoid accidental absolute
+        rel_str = str(subpath).lstrip("/")
+        rel = Path(rel_str)
+        # Drop any parent refs
+        cleaned = Path(*[p for p in rel.parts if p not in ("..", "")])
+        target = (ALLOWED_BASE / cleaned).resolve()
+
+    # Enforce anchoring to dk_data/
+    try:
+        target.relative_to(ALLOWED_BASE)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid root")
+
+    if not target.exists() or not target.is_dir():
+        raise HTTPException(status_code=400, detail="file not found")
+    return target
 
 @dataclass
 class Asset:
@@ -56,7 +95,7 @@ def _checksum(path: Path) -> str:
 
 
 def list_assets(root: Path | str) -> List[Dict[str, Any]]:
-    root_path = Path(root)
+    root_path = _safe_root(root)
     assets: List[Asset] = []
     for file in root_path.rglob("*.csv"):
         try:
@@ -68,8 +107,14 @@ def list_assets(root: Path | str) -> List[Dict[str, Any]]:
         guess = infer_type(file, headers)
         stat = file.stat()
         checksum = _checksum(file)
+        # Prefer paths relative to dk_data/, but fall back to the provided root (e.g., pytest tmp dirs)
+        try:
+            rel_path = str(file.relative_to(ALLOWED_BASE))
+        except ValueError:
+            rel_path = str(file.relative_to(root_path))
+
         asset = Asset(
-            path=str(file.relative_to(root_path)),
+            path=rel_path,
             size=stat.st_size,
             mtime=stat.st_mtime,
             typeGuess=guess,
