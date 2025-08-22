@@ -1,242 +1,283 @@
-PRD: Optimizer Settings — Interactive Controls + NgRx Wiring (UI‑only)
-
-***TASK 4***
+PRD — Data Assets Catalog & Projections Normalization (v1)
 
 
-Goal
-Replace the Optimizer right‑rail placeholders with real Angular form controls (lineup rules, salary min/max, ownership caps, exposures sliders). Wire them to a new NgRx builder + rules slices so changes update app state immediately. No backend calls yet.
-Scope
-Page: Optimizer (existing routed page).
-Panel: Right‑rail “Optimizer Settings”.
-Add Angular Reactive Forms.
-Add NgRx slices for rules and builder.
-Dispatch actions on change; reflect state in the UI.
-Use global SCSS tokens (dark theme, system font).
-Packages (if not already installed)
-npm i @ngrx/store @ngrx/effects @ngrx/entity @ngrx/router-store
-(Reactive Forms is built‑in: import { ReactiveFormsModule } from '@angular/forms';)
-State design
-rules slice (NBA lineups)
-export interface RulesState {
-  minUniques: number;          // 1–3
-  maxPerTeam?: number | null;  // null = unlimited
-  stackType?: 'none'|'team'|'game';
-  stackSize?: number | null;   // e.g., 2 or 3 if enabled
-}
+**Read AGENTS.md as well as this document**
 
-export const initialRules: RulesState = {
-  minUniques: 1,
-  maxPerTeam: null,
-  stackType: 'none',
-  stackSize: null,
-};
-Actions
-setMinUniques({ value: number })
-setMaxPerTeam({ value: number|null })
-setStackType({ value: RulesState['stackType'] })
-setStackSize({ value: number|null })
-builder slice (optimizer knobs)
-export interface BuilderState {
-  lineupCount: number;        // 1–150
-  salaryMinUsed: number;      // 0..50000 (DK)
-  correlation: number;        // 0..100
-  ownershipFade: number;      // 0..100
-  simDiversity: number;       // 0..100
-}
-
-export const initialBuilder: BuilderState = {
-  lineupCount: 20,
-  salaryMinUsed: 49500,
-  correlation: 50,
-  ownershipFade: 30,
-  simDiversity: 50,
-};
-Actions
-setLineupCount({ value: number })
-setSalaryMinUsed({ value: number })
-setCorrelation({ value: number })
-setOwnershipFade({ value: number })
-setSimDiversity({ value: number })
-Effects: none in this PRD (UI‑only). If a slice or root store isn’t set up yet, create AppStoreModule and register these reducers.
-UI requirements (right rail)
-Use Reactive Forms and live‑sync with store:
-Section: Lineup Rules
-Min uniques (segmented control: 1 / 2 / 3)
-Max players per team (number input, allow empty = unlimited)
-Stacking (select: None, Team, Game)
-Stack size (number input, disabled if stacking=None)
-Section: Salary min/max
-Min salary used (range input 47000–50000 + number input linked)
-Section: Ownership caps
-Ownership fade (0–100 range)
-(caps by player later; for now just the global fade slider)
-Section: Randomness
-Randomness (0–100 range)
-(per‑player targets later)
-Behavior
-Each control updates store immediately on change.
-Controls read initial values from selectors (store → form patch).
-Use tokens (--panel, --muted, --text, etc.) for styling.
-Add helper microcopy under labels (muted).
-Component & file structure
-src/app/features/optimizer/
-  optimizer.page.ts            // existing
-  optimizer.page.html
-  optimizer.page.scss
-
-src/app/state/
-  builder/
-    builder.actions.ts
-    builder.reducer.ts
-    builder.selectors.ts
-  rules/
-    rules.actions.ts
-    rules.reducer.ts
-    rules.selectors.ts
-
-src/app/ui/controls/
-  segmented/segmented.component.ts   // tiny headless segmented control
-If you prefer: embed segmented control inline in the page for now.
-Template sketch (right rail)
-optimizer.page.html (right rail section only)
-<aside class="inspector">
-  <form [formGroup]="form" class="settings">
-
-    <!-- Lineup Rules -->
-    <section>
-      <h3>Lineup rules</h3>
-
-      <label>Min uniques</label>
-      <app-segmented formControlName="minUniques" [options]="[1,2,3]"></app-segmented>
-      <p class="hint">Minimum different players across generated lineups.</p>
-
-      <label>Max per team</label>
-      <input type="number" min="1" max="8" placeholder="Unlimited" formControlName="maxPerTeam"/>
-      <p class="hint">Leave blank for no cap.</p>
-
-      <label>Stacking</label>
-      <select formControlName="stackType">
-        <option value="none">None</option>
-        <option value="team">Team</option>
-        <option value="game">Game</option>
-      </select>
-
-      <label>Stack size</label>
-      <input type="number" min="2" max="4" formControlName="stackSize" [disabled]="form.value.stackType==='none'"/>
-    </section>
-
-    <!-- Salary -->
-    <section>
-      <h3>Salary min/max</h3>
-      <label>Min salary used</label>
-      <input type="range" min="47000" max="50000" step="100" formControlName="salaryMinUsed"/>
-      <div class="row">
-        <input type="number" min="47000" max="50000" step="100" formControlName="salaryMinUsed"/>
-        <span class="hint">DK cap: $50,000</span>
-      </div>
-    </section>
-
-    <!-- Ownership -->
-    <section>
-      <h3>Ownership caps</h3>
-      <label>Ownership fade</label>
-      <input type="range" min="0" max="100" formControlName="ownershipFade"/>
-    </section>
-
-    <!-- Randomness -->
-    <section>
-      <h3>Randomness</h3>
-      <label>Randomness</label>
-      <input type="range" min="0" max="100" formControlName="simDiversity"/>
-    </section>
-
-  </form>
-</aside>
-optimizer.page.ts (form + store sync)
-import { Component, inject, OnInit, effect, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Store } from '@ngrx/store';
-import * as Rules from '../../state/rules';
-import * as Builder from '../../state/builder';
-
-@Component({
-  standalone: true,
-  selector: 'app-optimizer',
-  templateUrl: './optimizer.page.html',
-  styleUrls: ['./optimizer.page.scss'],
-  imports: [ReactiveFormsModule] // plus any UI components used
-})
-export class OptimizerPage implements OnInit {
-  private fb = inject(FormBuilder);
-  private store = inject(Store);
-
-  form = this.fb.group({
-    // rules
-    minUniques: 1,
-    maxPerTeam: null as number | null,
-    stackType: 'none' as 'none'|'team'|'game',
-    stackSize: null as number | null,
-    // builder
-    lineupCount: 20,
-    salaryMinUsed: 49500,
-    correlation: 50,
-    ownershipFade: 30,
-    simDiversity: 50,
-  });
-
-  ngOnInit(): void {
-    // Patch from store → form
-    this.store.select(Rules.selectRules).subscribe(r => {
-      this.form.patchValue({
-        minUniques: r.minUniques,
-        maxPerTeam: r.maxPerTeam ?? null,
-        stackType: r.stackType ?? 'none',
-        stackSize: r.stackSize ?? null,
-      }, { emitEvent: false });
-    });
-    this.store.select(Builder.selectBuilder).subscribe(b => {
-      this.form.patchValue({
-        lineupCount: b.lineupCount,
-        salaryMinUsed: b.salaryMinUsed,
-        correlation: b.correlation,
-        ownershipFade: b.ownershipFade,
-        simDiversity: b.simDiversity,
-      }, { emitEvent: false });
-    });
-
-    // Form → store (debounced)
-    this.form.get('minUniques')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Rules.setMinUniques({ value: Number(v) })));
-    this.form.get('maxPerTeam')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Rules.setMaxPerTeam({ value: v === null || v === '' ? null : Number(v) })));
-    this.form.get('stackType')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Rules.setStackType({ value: v as any })));
-    this.form.get('stackSize')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Rules.setStackSize({ value: v ? Number(v) : null })));
-
-    this.form.get('salaryMinUsed')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Builder.setSalaryMinUsed({ value: Number(v) })));
-    this.form.get('ownershipFade')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Builder.setOwnershipFade({ value: Number(v) })));
-    this.form.get('simDiversity')!.valueChanges.subscribe(v =>
-      this.store.dispatch(Builder.setSimDiversity({ value: Number(v) })));
+1) Overview
+Build a “Data Assets” module that:
+Catalogs CSV files in dk_data/ (and subfolders).
+Lets the user select a projections CSV from any source and map/normalize its columns to our canonical format.
+Resolves player identity against dk_data/player_ids.csv and outputs a timestamped normalized snapshot that downstream tools (optimizer, simulator, variant builder) can consume.
+2) Goals
+One screen to see, filter, and pick inputs (projections, ownership, contest structure, etc.).
+A Column Mapper that supports multiple vendors/unknown formats.
+Robust player matching to DK player IDs with a quick manual resolution UI for stragglers.
+Persist mapping profiles per source so remaps are one-click next time.
+Write normalized outputs to dk_data/snapshots/{YYYYMMDD_HHMM}/ with deterministic filenames.
+3) Non-Goals (v1)
+No multi-source blending or weighting.
+No writing to DuckDB yet (CSV only; we can add DB persistence in v2).
+No auth/roles.
+4) Canonical Schemas
+4.1 Projections (normalized output)
+player_id (string; DK ID; required)
+player_name (string)
+team (string; DK abbrev)
+positions (string; e.g., "PG,SG")
+salary (int, optional)
+fpts (float; our canonical projected fantasy points)
+ceil (float, optional)
+floor (float, optional)
+own (float, optional; 0–1 or 0–100 handled)
+source (string; e.g., "ETR"|"RG"|"Stokastik"|custom)
+snapshot_ts (ISO8601 string)
+4.2 Player IDs (reference input)
+From dk_data/player_ids.csv:
+player_id, player_name, team, positions (comma-sep), plus any extra DK fields
+5) UX Flow
+Data Assets Page
+Left pane: folders/tags (dk_data/, dk_data/output, dk_data/snapshots).
+Main pane: AG Grid table of files (name, size, modified time, type guess, checksum).
+Toolbar: Scan, Normalize Projections, Open Snapshot Folder.
+Select & Map
+User picks a projections CSV → opens Column Mapper modal.
+Auto-detect common synonyms:
+points|proj|projection|mean → fpts
+ownership|own|pown|proj_own → own
+pos|position|positions → positions
+name|player|player_name → player_name
+team|tm → team
+salary|sal|dk_salary → salary
+Show first 200 rows as preview with mapping dropdowns and type badges.
+Player Match Step
+Auto-match to player_ids.csv using:
+Exact match on (player_name, optional team) + fuzzy fallback (Levenshtein/Jaro-Winkler).
+Position and team heuristics if names collide.
+UI shows Unmatched / Ambiguous bucket with search-to-assign from DK player list.
+Track match confidence; require manual confirmation under a threshold.
+Validation & Save
+Validate required columns present (fpts, player_name or player_id).
+Normalize ownership to 0–1 internally; store as float.
+Normalize positions to canonical comma-sep; strip whitespace.
+Write snapshot to dk_data/snapshots/{YYYYMMDD_HHMM}/projections.csv.
+Persist mapping profile as JSON: dk_data/mappings/{source}.mapping.json.
+Catalog View Update
+The snapshot appears as a new row with type projections(normalized) and link to Preview.
+6) Technical Requirements
+6.1 Frontend (Angular)
+AG Grid for large tables (virtualized, sortable).
+Components:
+AssetsListComponent — lists files with type inference.
+ColumnMapperDialog — mapping UI + preview.
+PlayerResolveDialog — resolve unmatched/ambiguous players.
+SnapshotPreviewComponent — preview normalized CSV (first N rows).
+Keep state in a light AssetsService (RxJS) with caching.
+6.2 Backend API (FastAPI or existing Python service; add if missing)
+GET /assets?root=dk_data → returns files with {path, size, mtime, typeGuess, checksum}.
+POST /normalize/projections
+Body: { file_path, source_name?, mapping?, options? }
+If mapping omitted, backend attempts auto-map and returns needs_mapping with guess.
+POST /normalize/projections/commit
+Body: { file_path, mapping, player_resolutions? }
+Returns: { snapshot_dir, normalized_path, unmatched_count }
+GET /mappings → list saved profiles.
+POST /mappings → save/update profile.
+GET /players/dk → DK players for resolver (server caches player_ids.csv).
+Implementation notes
+Use pandas.read_csv(..., dtype=str) then cast columns after mapping to avoid dtype hell.
+Compute file checksum (e.g., SHA-1) to skip re-processing identical files.
+Fuzzy match lib: rapidfuzz (fast, pure Python).
+Write snapshots atomically (temp → move) to avoid partial files.
+Paths configurable in one place (existing paths config).
+6.3 Mapping Profiles (JSON)
+{
+  "source": "Stokastik",
+  "version": 1,
+  "column_map": {
+    "player": "player_name",
+    "tm": "team",
+    "pos": "positions",
+    "proj": "fpts",
+    "own_pct": "own",
+    "sal": "salary"
+  },
+  "normalizers": {
+    "own": "percent_to_fraction",
+    "positions": "split_comma_upper_trim",
+    "team": "upper_trim"
   }
 }
-Reducers: simple key updates; selectors return whole slice (selectRules, selectBuilder) and individual fields if helpful.
-Styling (use tokens)
-optimizer.page.scss
-.settings { padding: var(--gap-3); color: var(--text); }
-section + section { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
-h3 { font-size: var(--fs-14); margin: 0 0 8px; opacity: .9; }
-label { display:block; font-size: var(--fs-12); opacity: .85; margin: 8px 0 4px; }
-.hint { color: var(--subtle); font-size: var(--fs-12); margin-top: 4px; }
-.row { display:flex; align-items:center; gap: var(--gap-2); }
-input, select { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
-input[type="range"] { width: 100%; background: transparent; }
+7) Error Handling & Edge Cases
+Name collisions (Jr./Sr., accents): force manual pick; remember override by checksum + row hash.
+Teams after trades: allow match even if team differs but positions align; flag low confidence.
+Duplicate rows (same player multiple times): dedupe by player_id; warn.
+Ownership scales: detect if max > 1 → divide by 100.
+Huge files (50k+): stream parse; preview first N rows; whole-file run happens server-side.
+8) Performance
+Listing: <300ms for typical dk_data.
+Normalize: <5s for 50k rows on modest CPU.
+UI remains responsive; show progress indicator and counts (matched/ambiguous/unmatched).
+9) Telemetry & Logs
+Server logs per run: input path, checksum, mapping name, counts, duration.
+Optional CSV of unmatched for audit: unmatched_{timestamp}.csv in snapshot folder.
+10) Security
+Restrict file access to dk_data/ subtree.
+Sanitize file names; never execute user content.
+No external network calls.
+11) Testing / Acceptance Criteria
+Unit
+Mapper converts common synonyms correctly.
+Ownership normalization (e.g., 35 → 0.35).
+Integration
+Given a Stokastik-style CSV, produce a valid projections.csv in a timestamped snapshot.
+Auto-match rate ≥ 95% on a known slate; unmatched list generated.
+E2E
+User selects file → maps → resolves → saves → snapshot appears and is previewable.
+Saved mapping profile is applied on re-run without manual steps.
+Definition of Done
+Feature is accessible via “Data Assets” navbar item.
+Normalized projections.csv loads cleanly in downstream optimizer without manual edits.
+Docs added to docs/ and linked from README.
+Add .gitignore entries for dk_data/snapshots/ (keep, but ignore contents if desired) and dk_data/mappings/ (optional—decide if mappings live in git).
+12) Deliverables
+Frontend components (4) + service.
+Backend endpoints (5) with tests.
+Example mapping profiles for at least 2 sources.
+User docs: “Normalizing projections” with screenshots.
+CI step to run mapper unit tests.
+13) Nice-to-Have (defer if time tight)
+Ownership normalizer as a standalone path (some files are ownership-only).
+Source autodetect (regex on header row).
+Batch normalize multiple files.
+
+
+Implementation Task List (Agent)
+
+Milestone 0 — Project Setup
+	•	Create branch feature/data-assets-catalog-v1.
+	•	Add .gitignore entries:
+	•	dk_data/snapshots/**
+	•	dk_data/mappings/** (optional: keep tracked if we want mappings versioned)
+	•	Pin/confirm deps: pandas, rapidfuzz, pyyaml (if needed), fastapi (or current backend), uvicorn.
+	•	Single config location for paths (extend existing src/config/paths.py).
+
+⸻
+
+Milestone 1 — Backend: Asset Catalog
+	•	Endpoint: GET /assets?root=dk_data
+	•	Return { path, size, mtime, typeGuess, checksum }.
+	•	Type inference: projections/ownership/players/snapshot via header sniff + filename regex.
+	•	Compute SHA-1 checksum.
+	•	Unit tests for type inference & listing.
+
+⸻
+
+Milestone 2 — Backend: Projections Normalize (auto-map)
+	•	Endpoint: POST /normalize/projections
+	•	Inputs: { file_path, source_name?, mapping? }.
+	•	If mapping missing: detect with synonym table and return { needs_mapping: true, suggested_mapping, preview_rows }.
+	•	If mapping provided: run full normalization and return { needs_mapping: false, preview_rows, pending_resolutions }.
+	•	Canonical output columns: player_id, player_name, team, positions, salary, fpts, ceil, floor, own, source, snapshot_ts.
+	•	Implement normalizers:
+	•	Ownership: percent→fraction (detect max>1 → divide by 100).
+	•	Positions: split/trim/uppercase, comma-joined.
+	•	Team: uppercase/trim.
+	•	Types: cast with null-safe coercion.
+	•	Unit tests for synonym detection & normalizers.
+
+⸻
+
+Milestone 3 — Backend: Player Matching
+	•	Load DK players from dk_data/player_ids.csv (cached).
+	•	Matching pipeline:
+	•	Tier 1: exact on player_name (+ optional team).
+	•	Tier 2: fuzzy (Jaro-Winkler/Levenshtein via rapidfuzz) with score threshold.
+	•	Tie-breakers: positions, team, salary proximity (if available).
+	•	Return pending_resolutions with { row_key, candidate_list, confidence } for UI.
+	•	Unit tests: high-confidence match, ambiguous, unmatched.
+
+⸻
+
+Milestone 4 — Backend: Commit Snapshot & Profiles
+	•	Endpoint: POST /normalize/projections/commit
+	•	Inputs: { file_path, mapping, player_resolutions? }.
+	•	Write to dk_data/snapshots/{YYYYMMDD_HHMM}/projections.csv (atomic temp→move).
+	•	Output { snapshot_dir, normalized_path, counts: { total, matched, ambiguous, unmatched } }.
+	•	Endpoints for mapping profiles:
+	•	GET /mappings list profiles.
+	•	POST /mappings upsert { source, column_map, normalizers } to dk_data/mappings/{source}.mapping.json.
+	•	Integration tests: end-to-end normalize→commit, file existence, counts.
+
+⸻
+
+Milestone 5 — Frontend: Assets List
+	•	Route “Data Assets” in sidebar/nav.
+	•	AssetsListComponent (AG Grid):
+	•	Columns: name, size, modified, type, checksum (hidden), actions.
+	•	Toolbar: Scan, Normalize Projections, Open Snapshot Folder.
+	•	Action visibility based on typeGuess.
+	•	Service: AssetsService (RxJS cache) + API bindings.
+
+⸻
+
+Milestone 6 — Frontend: Column Mapper
+	•	ColumnMapperDialog:
+	•	Show source headers with dropdowns to select canonical fields.
+	•	Show “Suggested mapping” if backend returned needs_mapping:true.
+	•	Live preview (first 200 rows) with type badges.
+	•	Validation: require fpts and either player_id or player_name.
+	•	Controls: Apply Mapping → calls /normalize/projections with mapping.
+	•	Persist/Load mapping profiles:
+	•	Dropdown to select saved profile (auto-fill the mapping).
+	•	“Save profile” button → POST /mappings.
+
+⸻
+
+Milestone 7 — Frontend: Player Resolver
+	•	PlayerResolveDialog:
+	•	Tabs: Ambiguous, Unmatched.
+	•	For each unresolved row: list candidates with confidence, team, positions.
+	•	Search DK players on demand via GET /players/dk.
+	•	Bulk actions: accept all ≥ threshold; mark “intended” matches.
+	•	Submit → calls /normalize/projections/commit.
+
+⸻
+
+Milestone 8 — Frontend: Snapshot Preview
+	•	SnapshotPreviewComponent:
+	•	Read first N rows of normalized_path and show in AG Grid.
+	•	Status banner: { total, matched, ambiguous, unmatched }.
+	•	Button: “Open in Finder/Explorer” (if electron) or copy path (web).
+
+⸻
+
+Milestone 9 — Docs, QA, CI
+	•	docs/normalizing-projections.md with screenshots & “Gotchas”.
+	•	Add pytest for units/integration; wire to CI.
+	•	Log per run: input path, checksum, mapping name, counts, duration.
+	•	Optional: write unmatched_{timestamp}.csv to snapshot folder.
+
+⸻
+
 Acceptance Criteria
-Right rail shows interactive controls (not placeholders).
-Values load from store on page open.
-Changing any control dispatches the corresponding NgRx action and updates store.
-stackSize is disabled when stackType = none.
-Styling uses global tokens (dark, system font).
-No backend/effects calls yet; no console errors; type‑safe.
+	•	User can list assets under dk_data/.
+	•	User can map an arbitrary projections CSV with auto-suggested mapping.
+	•	Unmatched/ambiguous players are resolvable via UI.
+	•	A timestamped dk_data/snapshots/.../projections.csv is produced with canonical schema.
+	•	Saved mapping profile can be re-applied in one click.
+	•	Optimizer can read the normalized file without manual edits.
+
+⸻
+
+Stretch / Nice-to-Have (v1.1+)
+	•	Ownership-only normalizer path.
+	•	Batch normalize multiple files.
+	•	Source autodetect via header patterns.
+	•	DuckDB persistence mirror (toggle backend repo).
+
+⸻
+
+Dev Notes
+	•	Prefer pandas.read_csv(..., dtype=str) and cast post-map to avoid dtype drift.
+	•	For very large files: stream read for full run; preview is first 200 rows only.
+	•	Use atomic writes (temp file → rename) to avoid partial snapshots.
