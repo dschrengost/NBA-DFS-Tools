@@ -5,7 +5,7 @@ export const routes: Routes = [
   { path: 'optimizer', loadComponent: () => import('./pages').then(m => m.OptimizerPage) },
   { path: 'simulations', loadComponent: () => import('./pages').then(m => m.SimulationsPage) },
   { path: 'variants', loadComponent: () => import('./pages').then(m => m.VariantsPage) },
-  { path: 'results', loadComponent: () => import('./pages').then(m => m.ResultsPage) },
+  { path: 'results', loadChildren: () => import('./results/results.routes').then(m => m.RESULTS_ROUTES) },
   { path: 'settings', loadComponent: () => import('./pages').then(m => m.SettingsPage) },
   { path: '**', redirectTo: 'optimizer' }
 ];

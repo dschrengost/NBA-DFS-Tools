@@ -2,3 +2,6 @@
 *
 # Except this file
 !.gitignore
+# Allow sample datasets
+!sample/
+!sample/**
