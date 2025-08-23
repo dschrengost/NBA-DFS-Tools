@@ -1,0 +1,32 @@
+<div class="page">
+  <header class="toolbar">
+    <input type="file" (change)="onFileSelected($event)" />
+    <input #urlInput type="text" placeholder="HTTP path" />
+    <button type="button" (click)="onUrlLoad(urlInput)">Load</button>
+    <button type="button" (click)="togglePivot()" *ngIf="canPivot()">Raw/Pivot</button>
+    <label class="ref-btn">
+      <input #refInput type="file" (change)="onReferenceSelected($event)" hidden />
+      <button type="button" (click)="refInput.click()">Add Reference</button>
+    </label>
+    <button type="button" (click)="saveView()">Save View</button>
+    <button type="button" (click)="exportCsv()">Export</button>
+  </header>
+  <div class="alerts">
+    <div class="warn" *ngIf="warning()">{{ warning() }}</div>
+    <div class="error" *ngIf="error()">{{ error() }}</div>
+    <div class="count" *ngIf="meta()">Rows: {{ meta()!.rowCount }}</div>
+  </div>
+  <div class="stats" *ngIf="stats() as s">
+    <span>Count: {{ s.count }}</span>
+    <span>Mean FPTS: {{ s.meanFpts | number:'1.1-1' }}</span>
+    <span>Median FPTS: {{ s.medianFpts | number:'1.1-1' }}</span>
+    <span>Mean Own: {{ s.meanOwn | number:'1.1-1' }}</span>
+    <span>Salary Min/Max: {{ s.minSalary }}/{{ s.maxSalary }}</span>
+  </div>
+  <section class="grid-section" *ngIf="rows().length; else empty">
+    <app-csv-grid [rows]="rows()" [columnDefs]="columns()" [meta]="meta()"></app-csv-grid>
+  </section>
+  <ng-template #empty>
+    <div class="empty">Load a CSV file to begin.</div>
+  </ng-template>
+</div>
