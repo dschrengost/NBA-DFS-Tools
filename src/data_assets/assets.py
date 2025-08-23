@@ -29,12 +29,15 @@ def _safe_root(subpath: Path | str | None) -> Path:
     if not subpath:
         target = ALLOWED_BASE
     else:
-        # Treat strings and relative Paths as subpaths under dk_data/
-        # Normalize to string and strip leading slash to avoid accidental absolute
-        rel_str = str(subpath).lstrip("/")
+        # Treat strings/relative Paths as subpaths under dk_data/
+        # Normalize, strip leading slash, and drop traversal parts
+        rel_str = str(subpath).strip().lstrip("/")
         rel = Path(rel_str)
-        # Drop any parent refs
-        cleaned = Path(*[p for p in rel.parts if p not in ("..", "")])
+        parts = [p for p in rel.parts if p not in ("..", "")]
+        # If the caller passes "dk_data" (the base name), treat it as the base
+        if parts and parts[0] == ALLOWED_BASE.name:
+            parts = parts[1:]
+        cleaned = Path(*parts)
         target = (ALLOWED_BASE / cleaned).resolve()
 
     # Enforce anchoring to dk_data/
